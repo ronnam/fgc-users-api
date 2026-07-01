@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Fgc.Users.Api/Fgc.Users.Api.csproj" />
+    <Project Path="src/Fgc.Users.Application/Fgc.Users.Application.csproj" />
+    <Project Path="src/Fgc.Users.Domain/Fgc.Users.Domain.csproj" />
+    <Project Path="src/Fgc.Users.Infrastructure/Fgc.Users.Infrastructure.csproj" />
+  </Folder>
+</Solution>
