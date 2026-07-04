@@ -3,11 +3,9 @@ using Fgc.Users.Application.Services;
 using Fgc.Users.Domain.Entities;
 using Fgc.Users.Domain.Exceptions;
 using Fgc.Users.Domain.ValueObjects;
-using Microsoft.EntityFrameworkCore;
+using MassTransit;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
-using Xunit;
 
 namespace Fgc.Users.Tests.Services
 {
@@ -15,13 +13,15 @@ namespace Fgc.Users.Tests.Services
     {
         private readonly Mock<IUserRepository> _userRepositoryMock;
         private readonly Mock<ILogger<UserService>> _loggerMock;
+        private readonly Mock<IPublishEndpoint> _publishEndpointMock;
         private readonly UserService _userService;
 
         public UserServiceTests()
         {
             _userRepositoryMock = new Mock<IUserRepository>();
             _loggerMock = new Mock<ILogger<UserService>>();
-            _userService = new UserService(_userRepositoryMock.Object, _loggerMock.Object);
+            _publishEndpointMock = new Mock<IPublishEndpoint>();
+            _userService = new UserService(_userRepositoryMock.Object, _loggerMock.Object, _publishEndpointMock.Object);
         }
 
         #region RegisterAsync
