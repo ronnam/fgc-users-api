@@ -1,4 +1,5 @@
-﻿using Fgc.Users.Application.Interfaces;
+﻿using Fgc.MessageContracts.Events;
+using Fgc.Users.Application.Interfaces;
 using Fgc.Users.Application.Services;
 using Fgc.Users.Domain.Entities;
 using Fgc.Users.Domain.Exceptions;
@@ -85,6 +86,31 @@ namespace Fgc.Users.Tests.Services
                     name,
                     email,
                     invalidPassword));
+        }
+
+        [Fact]
+        public async Task RegisterAsync_ShouldPublishUserCreatedEvent_WhenRegistrationSucceds()
+        {
+            // Arrange
+            var name = "João Silva";
+            var email = "joao@dominio.com";
+            var password = "P@ssword@123";
+
+            _userRepositoryMock.Setup(r => r.ExistsByEmailAsync(email))
+                .ReturnsAsync(false);
+
+            // Act
+            var user = await _userService.RegisterAsync(name, email, password);
+
+            // Assert
+            _publishEndpointMock.Verify(
+                p => p.Publish(
+                    It.Is<UserCreatedEvent>(e => 
+                        e.Id == user.Id &&
+                        e.Name == name && 
+                        e.Email == email),
+                    It.IsAny<CancellationToken>()),
+                Times.Once());
         }
 
         #endregion

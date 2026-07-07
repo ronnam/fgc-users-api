@@ -7,12 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MassTransit.Abstractions" Version="8.2.5" />
+    <PackageReference Include="MassTransit" Version="9.1.2" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.9" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Fgc.Users.Domain\Fgc.Users.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\fgc-message-contracts\Fgc.MessageContracts\Fgc.MessageContracts.csproj" />
   </ItemGroup>
 
 </Project>
