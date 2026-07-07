@@ -1,13 +1,12 @@
-﻿using Fgc.Users.Application.Interfaces;
+﻿using Fgc.MessageContracts.Events;
+using Fgc.Users.Application.Interfaces;
 using Fgc.Users.Application.Services;
 using Fgc.Users.Domain.Entities;
 using Fgc.Users.Domain.Exceptions;
 using Fgc.Users.Domain.ValueObjects;
-using Microsoft.EntityFrameworkCore;
+using MassTransit;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System;
-using Xunit;
 
 namespace Fgc.Users.Tests.Services
 {
@@ -15,13 +14,15 @@ namespace Fgc.Users.Tests.Services
     {
         private readonly Mock<IUserRepository> _userRepositoryMock;
         private readonly Mock<ILogger<UserService>> _loggerMock;
+        private readonly Mock<IPublishEndpoint> _publishEndpointMock;
         private readonly UserService _userService;
 
         public UserServiceTests()
         {
             _userRepositoryMock = new Mock<IUserRepository>();
             _loggerMock = new Mock<ILogger<UserService>>();
-            _userService = new UserService(_userRepositoryMock.Object, _loggerMock.Object);
+            _publishEndpointMock = new Mock<IPublishEndpoint>();
+            _userService = new UserService(_userRepositoryMock.Object, _loggerMock.Object, _publishEndpointMock.Object);
         }
 
         #region RegisterAsync
@@ -85,6 +86,31 @@ namespace Fgc.Users.Tests.Services
                     name,
                     email,
                     invalidPassword));
+        }
+
+        [Fact]
+        public async Task RegisterAsync_ShouldPublishUserCreatedEvent_WhenRegistrationSucceds()
+        {
+            // Arrange
+            var name = "João Silva";
+            var email = "joao@dominio.com";
+            var password = "P@ssword@123";
+
+            _userRepositoryMock.Setup(r => r.ExistsByEmailAsync(email))
+                .ReturnsAsync(false);
+
+            // Act
+            var user = await _userService.RegisterAsync(name, email, password);
+
+            // Assert
+            _publishEndpointMock.Verify(
+                p => p.Publish(
+                    It.Is<UserCreatedEvent>(e => 
+                        e.Id == user.Id &&
+                        e.Name == name && 
+                        e.Email == email),
+                    It.IsAny<CancellationToken>()),
+                Times.Once());
         }
 
         #endregion

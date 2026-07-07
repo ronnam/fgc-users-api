@@ -4,6 +4,8 @@ using Fgc.Users.Domain.Entities;
 using Fgc.Users.Domain.Exceptions;
 using Fgc.Users.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
+using MassTransit;
+using Fgc.MessageContracts.Events;
 
 namespace Fgc.Users.Application.Services
 {
@@ -11,11 +13,14 @@ namespace Fgc.Users.Application.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly ILogger<UserService> _logger;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public UserService(IUserRepository userRepository, ILogger<UserService> logger)
+
+        public UserService(IUserRepository userRepository, ILogger<UserService> logger, IPublishEndpoint publishEndpoint)
         {
             _userRepository = userRepository;
             _logger = logger;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<User> RegisterAsync(string name,string email,string password)
@@ -39,6 +44,8 @@ namespace Fgc.Users.Application.Services
                 passwordHash
             );
             await _userRepository.AddAsync(user);
+
+            await _publishEndpoint.Publish(new UserCreatedEvent(user.Id, user.Name, user.Email.Value));
 
             _logger.LogInformation(
                 "User registered successfully | UserId={UserId} | Email={Email}",
