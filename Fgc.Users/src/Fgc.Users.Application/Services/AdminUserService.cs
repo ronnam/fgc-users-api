@@ -1,8 +1,10 @@
-﻿using Fgc.Users.Application.Helpers;
+﻿using Fgc.Users.Application.Events;
+using Fgc.Users.Application.Helpers;
 using Fgc.Users.Application.Interfaces;
 using Fgc.Users.Domain.Entities;
 using Fgc.Users.Domain.Exceptions;
 using Fgc.Users.Domain.ValueObjects;
+using MassTransit;
 using Microsoft.Extensions.Logging;
 
 namespace Fgc.Users.Application.Services
@@ -11,11 +13,13 @@ namespace Fgc.Users.Application.Services
     {
         private readonly IAdminUserRepository _adminUserRepository;
         private readonly ILogger<AdminUserService> _logger;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public AdminUserService(IAdminUserRepository adminUserRepository, ILogger<AdminUserService> logger)
+        public AdminUserService(IAdminUserRepository adminUserRepository, ILogger<AdminUserService> logger, IPublishEndpoint publishEndpoint)
         {
             _adminUserRepository = adminUserRepository;
             _logger = logger;
+            _publishEndpoint = publishEndpoint;
         }
         public async Task<User> RegisterAsync(
             string name,
@@ -34,6 +38,9 @@ namespace Fgc.Users.Application.Services
             );
 
             await _adminUserRepository.AddAsync(user);
+
+            var userCreatedEvent = new UserCreatedEvent(user.Id, user.Name, user.Email.Value);
+            await _publishEndpoint.Publish(userCreatedEvent);
 
             _logger.LogInformation("Admin created user | UserId={UserId} | Email={Email}", user.Id,user.Email.Value);
 
