@@ -1,4 +1,4 @@
-﻿using Fgc.Users.Application.Events;
+﻿using Fgc.MessageContracts.Events;
 using Fgc.Users.Application.Helpers;
 using Fgc.Users.Application.Interfaces;
 using Fgc.Users.Domain.Entities;
@@ -39,7 +39,7 @@ namespace Fgc.Users.Application.Services
 
             await _adminUserRepository.AddAsync(user);
 
-            var userCreatedEvent = new UserCreatedEvent(user.Id, user.Name, user.Email.Value);
+            var userCreatedEvent = new UserCreatedEvent(user.Id, user.Name, user.Email.Value, DateTime.UtcNow);
             await _publishEndpoint.Publish(userCreatedEvent);
 
             _logger.LogInformation("Admin created user | UserId={UserId} | Email={Email}", user.Id,user.Email.Value);

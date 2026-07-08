@@ -1,30 +1,26 @@
-# Estágio 1: Base (O ambiente de execução)
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /app
-EXPOSE 8080
-
-# Estágio 2: Build (O ambiente de compilação)
+# === STAGE 1: BUILD ===
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia apenas os arquivos de projeto primeiro para otimizar o cache.
-COPY ["src/Fgc.Users.Api/Fgc.Users.Api.csproj", "src/Fgc.Users.Api/"]
-COPY ["src/Fgc.Users.Application/Fgc.Users.Application.csproj", "src/Fgc.Users.Application/"]
-COPY ["src/Fgc.Users.Domain/Fgc.Users.Domain.csproj", "src/Fgc.Users.Domain/"]
-COPY ["src/Fgc.Users.Infrastructure/Fgc.Users.Infrastructure.csproj", "src/Fgc.Users.Infrastructure/"]
-RUN dotnet restore "src/Fgc.Users.Api/Fgc.Users.Api.csproj"
+# Pacotes locais (Fgc.MessageContracts)
+COPY LocalPackages ./LocalPackages
+COPY nuget.config .
 
-# Copia o restante do código-fonte e compila o projeto.
+# Copia apenas os .csproj pra cache do restore
+COPY ["Fgc.Users/src/Fgc.Users.Api/Fgc.Users.Api.csproj", "Fgc.Users/src/Fgc.Users.Api/"]
+COPY ["Fgc.Users/src/Fgc.Users.Application/Fgc.Users.Application.csproj", "Fgc.Users/src/Fgc.Users.Application/"]
+COPY ["Fgc.Users/src/Fgc.Users.Domain/Fgc.Users.Domain.csproj", "Fgc.Users/src/Fgc.Users.Domain/"]
+COPY ["Fgc.Users/src/Fgc.Users.Infrastructure/Fgc.Users.Infrastructure.csproj", "Fgc.Users/src/Fgc.Users.Infrastructure/"]
+RUN dotnet restore "Fgc.Users/src/Fgc.Users.Api/Fgc.Users.Api.csproj"
+
+# Copia o resto e faz o publish
 COPY . .
-WORKDIR "/src/src/Fgc.Users.Api"
-RUN dotnet build "Fgc.Users.Api.csproj" -c Release -o /app/build
+WORKDIR "/src/Fgc.Users/src/Fgc.Users.Api"
+RUN dotnet publish "Fgc.Users.Api.csproj" -c Release -o /app/publish
 
-# Estágio 3: Publicação (Gera a versão final otimizada)
-FROM build AS publish
-RUN dotnet publish "Fgc.Users.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
-
-# Estágio 4: Final (Cria a imagem final, a caixa que vai para a nuvem)
-FROM base AS final
+# === STAGE 2: RUNTIME ===
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-COPY --from=publish /app/publish .
+EXPOSE 8080
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "Fgc.Users.Api.dll"]
