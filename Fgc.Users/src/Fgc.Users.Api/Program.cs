@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,7 +41,7 @@ builder.Services.AddMassTransit(x =>
     x.UsingRabbitMq((context, cfg) =>
     {
         // Aqui dizemos onde o RabbitMQ está rodando (localhost) e a porta padrão.
-        cfg.Host("localhost", "/", h =>
+        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
         {
             h.Username("admin"); // Usuário configurado no docket-compose.yml
             h.Password("admin"); // A senha configurada no docket-compose.yml
@@ -104,19 +103,6 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ============================================================
-
-// E. Configuração do MassTransit (RabbitMQ)
-builder.Services.AddMassTransit(x =>
-{
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        cfg.Host("localhost", "/", h =>
-        {
-            h.Username("admin");
-            h.Password("admin");
-        });
-    });
-});
 
 var app = builder.Build();
 
