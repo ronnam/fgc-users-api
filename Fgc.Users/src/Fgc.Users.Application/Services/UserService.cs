@@ -1,8 +1,10 @@
-﻿using Fgc.Users.Application.Helpers;
+﻿using Fgc.Users.Application.Events;
+using Fgc.Users.Application.Helpers;
 using Fgc.Users.Application.Interfaces;
 using Fgc.Users.Domain.Entities;
 using Fgc.Users.Domain.Exceptions;
 using Fgc.Users.Domain.ValueObjects;
+using MassTransit;
 using Microsoft.Extensions.Logging;
 using MassTransit;
 using Fgc.MessageContracts.Events;

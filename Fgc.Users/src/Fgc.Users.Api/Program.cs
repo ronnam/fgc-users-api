@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,20 @@ builder.Services.AddScoped<IAdminUserRepository, AdminUserRepository>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AdminUserService>();
 builder.Services.AddScoped<AuthService>();
+
+// Configuração do massTransit+RabbitMQ
+builder.Services.AddMassTransit(x => 
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        // Aqui dizemos onde o RabbitMQ está rodando (localhost) e a porta padrão.
+        cfg.Host("localhost", "/", h =>
+        {
+            h.Username("admin"); // Usuário configurado no docket-compose.yml
+            h.Password("admin"); // A senha configurada no docket-compose.yml
+        });
+    });
+});
 
 // Adicionando o gerador de token aqui junto com os serviços de autenticação.
 builder.Services.AddScoped<Fgc.Users.API.Security.JwtTokenGenerator>();
