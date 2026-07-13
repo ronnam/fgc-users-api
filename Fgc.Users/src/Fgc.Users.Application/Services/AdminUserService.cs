@@ -9,18 +9,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Fgc.Users.Application.Services
 {
-    public class AdminUserService
+    public class AdminUserService(IAdminUserRepository adminUserRepository, ILogger logger, IPublishEndpoint publishEndpoint)
     {
-        private readonly IAdminUserRepository _adminUserRepository;
-        private readonly ILogger<AdminUserService> _logger;
-        private readonly IPublishEndpoint _publishEndpoint;
-
-        public AdminUserService(IAdminUserRepository adminUserRepository, ILogger<AdminUserService> logger, IPublishEndpoint publishEndpoint)
-        {
-            _adminUserRepository = adminUserRepository;
-            _logger = logger;
-            _publishEndpoint = publishEndpoint;
-        }
+        
         public async Task<User> RegisterAsync(
             string name,
             string email,
@@ -37,36 +28,36 @@ namespace Fgc.Users.Application.Services
                 passwordHash
             );
 
-            await _adminUserRepository.AddAsync(user);
+            await adminUserRepository.AddAsync(user);
 
             var userCreatedEvent = new UserCreatedEvent(user.Id, user.Name, user.Email.Value, DateTime.UtcNow);
-            await _publishEndpoint.Publish(userCreatedEvent);
+            await publishEndpoint.Publish(userCreatedEvent);
 
-            _logger.LogInformation("Admin created user | UserId={UserId} | Email={Email}", user.Id,user.Email.Value);
+            logger.LogInformation("Admin created user | UserId={UserId} | Email={Email}", user.Id,user.Email.Value);
 
             return user;
         }
 
         public async Task<IEnumerable<User>> GetAllAsync()
         {
-            _logger.LogInformation("Admin requested user list");
+            logger.LogInformation("Admin requested user list");
 
-            return await _adminUserRepository.GetAllAsync();
+            return await adminUserRepository.GetAllAsync();
         }
         public async Task<User?> GetByIdAsync(Guid id)
         {
-            _logger.LogInformation("Admin requested user details | UserId={UserId}",id);
+            logger.LogInformation("Admin requested user details | UserId={UserId}",id);
 
-            return await _adminUserRepository.GetByIdAsync(id);
+            return await adminUserRepository.GetByIdAsync(id);
         }
 
         public async Task<User> UpdateByAdminAsync(Guid userId, string role)
         {
-            var user = await _adminUserRepository.GetByIdAsync(userId);
+            var user = await adminUserRepository.GetByIdAsync(userId);
 
             if (user is null)
             {
-                _logger.LogWarning(
+                logger.LogWarning(
                     "Admin attempted to update role of non-existing user | UserId={UserId}",
                     userId
                 );
@@ -78,9 +69,9 @@ namespace Fgc.Users.Application.Services
 
             user.UpdateRole(role);
 
-            await _adminUserRepository.UpdateAsync(user);
+            await adminUserRepository.UpdateAsync(user);
 
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Admin updated user role | UserId={UserId} | NewRole={Role}",
                 user.Id,
                 role
@@ -91,18 +82,18 @@ namespace Fgc.Users.Application.Services
 
         public async Task DeleteUserAsync(Guid id)
         {
-            var user = await _adminUserRepository.GetByIdAsync(id);
+            var user = await adminUserRepository.GetByIdAsync(id);
 
             if (user is null)
             {
-                _logger.LogWarning("Admin attempted to delete non-existing user | UserId={UserId}", id);
+                logger.LogWarning("Admin attempted to delete non-existing user | UserId={UserId}", id);
 
                 throw new NotFoundException("User not found.");
             }
 
-            await _adminUserRepository.DeleteAsync(user);
+            await adminUserRepository.DeleteAsync(user);
 
-            _logger.LogInformation("Admin deleted user | UserId={UserId} | Email={Email}",user.Id,user.Email.Value);
+            logger.LogInformation("Admin deleted user | UserId={UserId} | Email={Email}",user.Id,user.Email.Value);
         }
     }
 }
