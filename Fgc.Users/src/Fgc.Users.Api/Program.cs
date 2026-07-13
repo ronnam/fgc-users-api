@@ -35,20 +35,6 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AdminUserService>();
 builder.Services.AddScoped<AuthService>();
 
-// Configuração do massTransit+RabbitMQ
-builder.Services.AddMassTransit(x => 
-{
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        // Aqui dizemos onde o RabbitMQ está rodando (localhost) e a porta padrão.
-        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
-        {
-            h.Username("admin"); // Usuário configurado no docket-compose.yml
-            h.Password("admin"); // A senha configurada no docket-compose.yml
-        });
-    });
-});
-
 // Adicionando o gerador de token aqui junto com os serviços de autenticação.
 builder.Services.AddScoped<Fgc.Users.API.Security.JwtTokenGenerator>();
 
@@ -103,17 +89,20 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // E. MassTransit / RabbitMQ
-builder.Services.AddMassTransit(x =>
+if (!builder.Services.Any(s => s.ServiceType == typeof(MassTransit.IBus)))
 {
-    x.UsingRabbitMq((context, cfg) =>
+    builder.Services.AddMassTransit(x =>
     {
-        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+        x.UsingRabbitMq((context, cfg) =>
         {
-            h.Username("admin");
-            h.Password("admin");
+            cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+            {
+                h.Username("admin");
+                h.Password("admin");
+            });
         });
     });
-});
+}
 // ============================================================
 
 var app = builder.Build();
