@@ -2,6 +2,7 @@ using Fgc.Users.Application.Interfaces;
 using Fgc.Users.Application.Services;
 using Fgc.Users.Infrastructure.Persistence;
 using Fgc.Users.Infrastructure.Repositories;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -86,6 +87,18 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// E. MassTransit / RabbitMQ
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+        {
+            h.Username("admin");
+            h.Password("admin");
+        });
+    });
+});
 // ============================================================
 
 var app = builder.Build();
