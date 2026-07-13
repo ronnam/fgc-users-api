@@ -3,6 +3,8 @@ using Fgc.Users.API.Security;
 using Fgc.Users.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 using Fgc.Users.Domain.Exceptions;
+using MassTransit;
+using Fgc.MessageContracts.Events;
 
 namespace Fgc.Users.Api.Controllers;
 
@@ -14,15 +16,18 @@ public class AuthController : ControllerBase
     private readonly UserService _userService;
     private readonly AuthService _authService;
     private readonly JwtTokenGenerator _jwtTokenGenerator;
+    private readonly IPublishEndpoint _publishEndpoint;
 
     public AuthController(
         UserService userService,
         AuthService authService,
-        JwtTokenGenerator jwtTokenGenerator)
+        JwtTokenGenerator jwtTokenGenerator,
+        IPublishEndpoint publishEndpoint)
     {
         _userService = userService;
         _authService = authService;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _publishEndpoint = publishEndpoint;
     }
 
     // POST /auth/register
@@ -41,6 +46,14 @@ public class AuthController : ControllerBase
             request.Email,
             request.Password
             );
+
+            await _publishEndpoint.Publish(new UserCreatedEvent(
+                user.Id,
+                user.Name,
+                user.Email.Value,
+                DateTime.UtcNow
+                
+            ));
 
             return CreatedAtAction(nameof(Register),
             new { id = user.Id },

@@ -102,6 +102,18 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// E. MassTransit / RabbitMQ
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", h =>
+        {
+            h.Username("admin");
+            h.Password("admin");
+        });
+    });
+});
 // ============================================================
 
 var app = builder.Build();
