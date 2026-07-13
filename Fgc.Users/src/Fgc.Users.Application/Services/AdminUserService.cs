@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Fgc.Users.Application.Services
 {
-    public class AdminUserService(IAdminUserRepository adminUserRepository, ILogger logger, IPublishEndpoint publishEndpoint)
+    public class AdminUserService(IAdminUserRepository adminUserRepository, ILogger<AdminUserService> logger, IPublishEndpoint publishEndpoint)
     {
         
         public async Task<User> RegisterAsync(
