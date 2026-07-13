@@ -3,25 +3,19 @@ using Fgc.Users.Application.Interfaces;
 using Fgc.Users.Domain.Entities;
 using Fgc.Users.Domain.Exceptions;
 using Fgc.Users.Domain.ValueObjects;
+using MassTransit;
 using Microsoft.Extensions.Logging;
+using Fgc.MessageContracts.Events;
 
 namespace Fgc.Users.Application.Services
 {
-    public class UserService
+    public class UserService(IUserRepository userRepository, ILogger<UserService> logger, IPublishEndpoint publishEndpoint)
     {
-        private readonly IUserRepository _userRepository;
-        private readonly ILogger<UserService> _logger;
-
-        public UserService(IUserRepository userRepository, ILogger<UserService> logger)
-        {
-            _userRepository = userRepository;
-            _logger = logger;
-        }
-
+        
         public async Task<User> RegisterAsync(string name,string email,string password)
         {
             // Verificar se o email já está registrado. Procurando remover o Entity Framework que estava instalado por ocasião do monolito.
-            var emailExists = await _userRepository.ExistsByEmailAsync(email);
+            var emailExists = await userRepository.ExistsByEmailAsync(email);
 
             if (emailExists)
             {
@@ -38,9 +32,16 @@ namespace Fgc.Users.Application.Services
                 emailVo,
                 passwordHash
             );
-            await _userRepository.AddAsync(user);
+            await userRepository.AddAsync(user);
 
-            _logger.LogInformation(
+            await publishEndpoint.Publish(new UserCreatedEvent(
+                    user.Id, 
+                    user.Name, 
+                    user.Email.Value,
+                    DateTime.UtcNow
+                ));
+
+            logger.LogInformation(
                 "User registered successfully | UserId={UserId} | Email={Email}",
                 user.Id,
                 user.Email.Value
@@ -54,11 +55,11 @@ namespace Fgc.Users.Application.Services
             string email,
             string password)
         {
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await userRepository.GetByIdAsync(userId);
 
             if (user is null)
             {
-               _logger.LogWarning("Attempt to update non-existing user | UserId={UserId}", userId);
+               logger.LogWarning("Attempt to update non-existing user | UserId={UserId}", userId);
 
                 throw new NotFoundException("User not found.");
             }
@@ -68,7 +69,7 @@ namespace Fgc.Users.Application.Services
             user.UpdateEmail(Email.Create(email));
             user.UpdatePassword(PasswordHasher.Hash(password));
 
-            await _userRepository.UpdateAsync(user);
+            await userRepository.UpdateAsync(user);
 
             return user;
         }
